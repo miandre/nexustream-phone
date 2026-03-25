@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NexuStream Personal Phone</title>
+    <style>
+        /* CSS för designen - Enkel mobil-look */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #000;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden; /* Förhindra skrollning på body */
+        }
+
+        #phone-container {
+            width: 100%;
+            height: 100%;
+            background-color: #111;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Status bar längst upp */
+        #status-bar {
+            height: 20px;
+            padding: 0 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            background-color: #000;
+            z-index: 10;
+        }
+
+        /* Gemensam stil för alla skärmar */
+        .screen {
+            display: none; /* Dölj alla skärmar som standard */
+            width: 100%;
+            height: calc(100% - 20px); /* Ta bort status bar höjd */
+            position: absolute;
+            top: 20px;
+            left: 0;
+            overflow-y: auto; /* Tillåt vertikal skrollning inuti skärmar */
+        }
+
+        .screen.active {
+            display: block; /* Visa endast den aktiva skärmen */
+        }
+
+        /* --- SKÄRM 1: MÖNSTERLÅS --- */
+        #lock-screen {
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #pattern-holder {
+            width: 300px;
+            height: 300px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 20px;
+            padding: 20px;
+            margin-top: 50px;
+        }
+
+        .pattern-dot {
+            width: 60px;
+            height: 60px;
+            background-color: #333;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .pattern-dot.selected {
+            background-color: #ff4d4d; /* Röd färg när den valts */
+        }
+
+        #lock-message {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #aaa;
+        }
+
+        /* --- SKÄRM 2: HEMSKÄRM --- */
+        #home-screen {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="%231a1a1a"/></svg>'); /* Enkel mörk bakgrund */
+            background-size: cover;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            align-content: start;
+        }
+
+        .app-icon {
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .app-icon img {
+            width: 60px;
+            height: 60px;
+            background-color: #333;
+            border-radius: 15px;
+            margin-bottom: 5px;
+        }
+
+        .app-icon span {
+            font-size: 12px;
+            color: #fff;
+            display: block;
+        }
+
+        /* --- SKÄRM 3 & 4: SMS --- */
+        #sms-list-screen, #sms-thread-screen {
+            background-color: #000;
+        }
+
+        .header {
+            background-color: #1a1a1a;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-btn {
+            cursor: pointer;
+            color: #ff4d4d;
+            font-size: 16px;
+        }
+
+        .sms-item {
+            padding: 15px;
+            border-bottom: 1px solid #222;
+            cursor: pointer;
+        }
+
+        .sms-sender {
+            font-weight: bold;
+            font-size: 16px;
+            color: #fff;
+        }
+
+        .sms-preview {
+            color: #aaa;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .sms-time {
+            float: right;
+            color: #666;
+            font-size: 12px;
+        }
+
+        /* SMS Tråd styling */
+        .message {
+            margin: 10px;
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        .message.sent {
+            background-color: #333;
+            color: #fff;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .message.received {
+            background-color: #ff4d4d;
+            color: #fff;
+            align-self: flex-start;
+        }
+
+        /* --- SKÄRM 5: BILDGALLERI --- */
+        #gallery-screen {
+            background-color: #000;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            align-content: start;
+        }
+
+        .gallery-thumb {
+            width: 100%;
+            padding-bottom: 100%; /* Kvadratisk */
+            background-color: #333;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="phone-container">
+    <div id="status-bar">
+        <span>NexuStream</span>
+        <span id="current-time"></span>
+    </div>
+
+    <div id="lock-screen" class="screen active">
+        <div id="lock-message">Rita mönster</div>
+        <div id="pattern-holder">
+            <div class="pattern-dot" data-index="1"></div>
+            <div class="pattern-dot" data-index="2"></div>
+            <div class="pattern-dot" data-index="3"></div>
+            <div class="pattern-dot" data-index="4"></div>
+            <div class="pattern-dot" data-index="5"></div>
+            <div class="pattern-dot" data-index="6"></div>
+            <div class="pattern-dot" data-index="7"></div>
+            <div class="pattern-dot" data-index="8"></div>
+            <div class="pattern-dot" data-index="9"></div>
+        </div>
+    </div>
+
+    <div id="home-screen" class="screen">
+        <div class="app-icon" onclick="showScreen('sms-list-screen')">
+            <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'><path d='M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z'/></svg>" alt="SMS">
+            <span>Meddelanden</span>
+        </div>
+        <div class="app-icon" onclick="showScreen('gallery-screen')">
+            <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'><path d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/></svg>" alt="Bilder">
+            <span>Bilder</span>
+        </div>
+        </div>
+
+    <div id="sms-list-screen" class="screen">
+        <div class="header">Meddelanden</div>
+        <div class="sms-item" onclick="showSMSThread('Sebastian')">
+            <span class="sms-time">21:38</span>
+            <div class="sms-sender">Sebastian Berg</div>
+            <div class="sms-preview">Ok, jag fattar. Men det här är inte över...</div>
+        </div>
+        <div class="sms-item" onclick="showSMSThread('Beatrice')">
+            <span class="sms-time">21:32</span>
+            <div class="sms-sender">Beatrice von Essen</div>
+            <div class="sms-preview">Var är rapporterna? Jag väntar.</div>
+        </div>
+    </div>
+
+    <div id="sms-thread-screen" class="screen">
+        <div class="header">
+            <span class="back-btn" onclick="showScreen('sms-list-screen')">❮ Bakåt</span>
+            <span id="thread-part-name">Namn</span>
+            <span></span> </div>
+        <div id="thread-messages" style="display: flex; flex-direction: column; padding: 10px;">
+            </div>
+    </div>
+
+    <div id="gallery-screen" class="screen">
+        <div class="header">
+            <span class="back-btn" onclick="showScreen('home-screen')">❮ Hem</span>
+            <span>Bilder</span>
+            <span></span>
+        </div>
+        <div class="gallery-thumb" style="background-image: url('din_bild1_url.jpg')"></div>
+        <div class="gallery-thumb" style="background-image: url('din_bild2_url.jpg')"></div>
+        <div class="gallery-thumb" style="background-image: url('din_bild3_url.jpg')"></div>
+    </div>
+
+</div>
+
+<script>
+    // --- JAVASCRIPT FÖR LOGIK ---
+
+    // 1. Tidsuppdatering
+    function updateTime() {
+        const now = new Date();
+        const timeString = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        document.getElementById('current-time').textContent = timeString;
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    // 2. Mönsterlås-logik
+    // RÄTT MÖNSTER (baserat på data-index 1-9):
+    // Vi definierar NexuStream-pilen: 1 -> 2 -> 3 -> 6 -> 9 -> 8 -> 7
+    const correctPattern = ['1', '2', '3', '6', '9', '8', '7'];
+    let currentPattern = [];
+    let isDrawing = false;
+
+    const dots = document.querySelectorAll('.pattern-dot');
+    const lockScreen = document.getElementById('lock-screen');
+    const lockMessage = document.getElementById('lock-message');
+
+    // Hantera touch/mus-händelser
+    function handleStart(e) {
+        isDrawing = true;
+        currentPattern = [];
+        dots.forEach(dot => dot.classList.remove('selected'));
+        handleMove(e); // Registrera första punkten direkt
+    }
+
+    function handleMove(e) {
+        if (!isDrawing) return;
+        e.preventDefault(); // Förhindra skrollning när man ritar
+
+        let clientX, clientY;
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+
+        const target = document.elementFromPoint(clientX, clientY);
+        if (target && target.classList.contains('pattern-dot')) {
+            const index = target.getAttribute('data-index');
+            if (currentPattern.length === 0 || currentPattern[currentPattern.length - 1] !== index) {
+                if (!target.classList.contains('selected')) {
+                    target.classList.add('selected');
+                    currentPattern.push(index);
+                }
+            }
+        }
+    }
+
+    function handleEnd() {
+        if (!isDrawing) return;
+        isDrawing = false;
+
+        if (JSON.stringify(currentPattern) === JSON.stringify(correctPattern)) {
+            lockMessage.textContent = "Låser upp...";
+            lockMessage.style.color = "#4caf50"; // Grön
+            setTimeout(() => {
+                showScreen('home-screen');
+            }, 1000);
+        } else {
+            lockMessage.textContent = "Fel mönster. Försök igen.";
+            lockMessage.style.color = "#ff4d4d"; // Röd
+            dots.forEach(dot => dot.classList.remove('selected'));
+            currentPattern = [];
+        }
+    }
+
+    // Event listeners för både mus och touch
+    lockScreen.addEventListener('mousedown', handleStart);
+    lockScreen.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd); // Mouseup måste vara på window
+
+    lockScreen.addEventListener('touchstart', handleStart);
+    lockScreen.addEventListener('touchmove', handleMove);
+    lockScreen.addEventListener('touchend', handleEnd);
+
+    // 3. Navigerings-logik
+    function showScreen(screenId) {
+        // Dölj alla skärmar
+        const screens = document.querySelectorAll('.screen');
+        screens.forEach(screen => screen.classList.remove('active'));
+
+        // Visa den valda skärmen
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    // 4. Dynamisk laddning av SMS-trådar
+    const smsData = {
+        'Sebastian': [
+            { sender: 'them', text: 'Du skämtar? Du lovade! Jag är ruinerad om du backar nu!', time: '19:48' },
+            { sender: 'me', text: 'Marknaden har förändrats. Gilla läget.', time: '19:50' },
+            { sender: 'them', text: 'Ok, jag fattar. Men det här är inte över...', time: '21:38' }
+        ],
+        'Beatrice': [
+            { sender: 'them', text: 'Siffrorna Marcus visade mig stämmer inte. Jag vet vad ni mörkar.', time: '21:10' },
+            { sender: 'me', text: 'Lugna ner dig. Vi tar det sen.', time: '21:12' },
+            { sender: 'them', text: 'Nej. Vi möts i lobbyn kl 21.30. Ta med originalrapporterna annars sparkar jag dig.', time: '21:28' },
+            { sender: 'me', text: 'Marcus har rapporterna. Han är på väg till mitt rum nu.', time: '21:32' }
+        ]
+    };
+
+    function showSMSThread(contactName) {
+        showScreen('sms-thread-screen');
+        document.getElementById('thread-part-name').textContent = contactName;
+        
+        const messagesContainer = document.getElementById('thread-messages');
+        messagesContainer.innerHTML = ''; // Rensa tidigare meddelanden
+
+        const messages = smsData[contactName];
+        if (messages) {
+            messages.forEach(msg => {
+                const msgDiv = document.createElement('div');
+                msgDiv.classList.add('message');
+                msgDiv.classList.add(msg.sender === 'me' ? 'sent' : 'received');
+                msgDiv.innerHTML = `<div>${msg.text}</div><div style="font-size: 10px; color: #666; margin-top: 3px;">${msg.time}</div>`;
+                messagesContainer.appendChild(msgDiv);
+            });
+        }
+    }
+
+</script>
+
+</body>
+</html>
