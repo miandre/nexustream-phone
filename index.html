@@ -15,7 +15,7 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            touch-action: none; /* Förhindrar att skärmen scrollar när man drar mönstret */
+            touch-action: none;
         }
 
         /* Telefonens yttre ram */
@@ -32,7 +32,7 @@
             flex-direction: column;
         }
 
-        /* Statusraden högst upp */
+        /* Statusraden högst upp (används bara på låsskärmen nu) */
         #status-bar {
             height: 24px;
             background-color: #000;
@@ -45,8 +45,8 @@
             font-weight: bold;
         }
 
-        /* Arbetsytan för skärmen */
-        #display-area {
+        /* --- SKÄRM 1: LÅSSKÄRMEN --- */
+        #lock-screen {
             flex-grow: 1;
             background-color: #0d0d0d;
             display: flex;
@@ -55,7 +55,6 @@
             justify-content: center;
         }
 
-        /* Låsskärmens specifika stil */
         #lock-message {
             color: #fff;
             font-size: 18px;
@@ -63,7 +62,6 @@
             text-align: center;
         }
 
-        /* Rutnätet för punkterna */
         #pattern-holder {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -71,7 +69,6 @@
             padding: 20px;
         }
 
-        /* Själva punkterna */
         .pattern-dot {
             width: 20px;
             height: 20px;
@@ -81,13 +78,11 @@
             cursor: pointer;
         }
 
-        /* Färg när en punkt är markerad (röd, som i loggan) */
         .pattern-dot.selected {
             background-color: #ff3333;
             box-shadow: 0 0 10px #ff3333;
         }
         
-        /* En större osynlig "träffyta" runt punkten så det är lättare att träffa med fingret på mobil */
         .pattern-dot::after {
             content: '';
             position: absolute;
@@ -95,17 +90,64 @@
             border-radius: 50%;
         }
 
+        /* --- SKÄRM 2: HEMSKÄRMEN --- */
+        #home-screen {
+            display: none; /* Dold från start */
+            width: 100%;
+            height: 100%;
+            background-image: url('phone1.jpg'); /* Laddar in din uppladdade skärmdump */
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        /* Osynliga klickbara ytor (Hitboxes) */
+        .hitbox {
+            position: absolute;
+            cursor: pointer;
+            /* TIPS: Avkommentera raden nedanför (ta bort /* och */) om du vill se var de osynliga knapparna ligger när du ställer in dem! */
+            /* border: 2px solid red; background: rgba(255,0,0,0.3); */
+        }
+
+        /* Placering över SMS-ikonen (blå nere till vänster) */
+        #btn-sms {
+            bottom: 7.5%; 
+            left: 27%;
+            width: 17%;
+            height: 8.5%;
+            border-radius: 10px;
+        }
+
+        /* Placering över Galleri-ikonen (gul nere till höger) */
+        #btn-gallery-dock {
+            bottom: 7.5%; 
+            right: 6%;
+            width: 17%;
+            height: 8.5%;
+            border-radius: 10px;
+        }
+
+        /* Placering över "Photos"-ikonen (vindsnurran mitt på skärmen) */
+        #btn-photos-app {
+            bottom: 22.5%; 
+            left: 52%;
+            width: 16%;
+            height: 8%;
+            border-radius: 10px;
+        }
+
     </style>
 </head>
 <body>
 
 <div id="phone-bezel">
+    
     <div id="status-bar">
         <span>NexuStream</span>
         <span id="current-time">--:--</span>
     </div>
     
-    <div id="display-area">
+    <div id="lock-screen">
         <div id="lock-message">Rita mönster för att låsa upp</div>
         
         <div id="pattern-holder">
@@ -120,10 +162,17 @@
             <div class="pattern-dot" data-index="9"></div>
         </div>
     </div>
+
+    <div id="home-screen">
+        <div id="btn-sms" class="hitbox" onclick="alert('Bra jobbat! Här ska vi snart bygga in SMS-listan.')"></div>
+        <div id="btn-gallery-dock" class="hitbox" onclick="alert('Här ska bildgalleriet öppnas!')"></div>
+        <div id="btn-photos-app" class="hitbox" onclick="alert('Här ska bildgalleriet öppnas!')"></div>
+    </div>
+
 </div>
 
 <script>
-    // 1. Uppdatera klockan i statusraden
+    // 1. Klockan för låsskärmen
     function updateTime() {
         const now = new Date();
         document.getElementById('current-time').textContent = 
@@ -133,13 +182,13 @@
     setInterval(updateTime, 1000);
     updateTime();
 
-    // 2. Logik för mönsterlåset
-    const correctPattern = ['1', '2', '3', '6', '9', '8', '7']; // NexuStream-loggan!
+    // 2. Mönsterlåset
+    const correctPattern = ['1', '2', '3', '6', '9', '8', '7'];
     let currentPattern = [];
     let isDrawing = false;
 
     const dots = document.querySelectorAll('.pattern-dot');
-    const lockScreen = document.getElementById('display-area'); // Hela skärmytan fångar drag-events
+    const lockScreen = document.getElementById('lock-screen');
     const lockMessage = document.getElementById('lock-message');
 
     function resetPattern() {
@@ -150,24 +199,20 @@
     function handleStart(e) {
         isDrawing = true;
         resetPattern();
-        handleMove(e); // Fånga första punkten man klickar på direkt
+        handleMove(e);
     }
 
     function handleMove(e) {
         if (!isDrawing) return;
-        e.preventDefault(); // Stoppar telefonens inbyggda scroll
+        e.preventDefault();
         
-        // Hämta koordinater (hanterar både touch och datormus)
         let clientX = e.touches ? e.touches[0].clientX : e.clientX;
         let clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-        // Titta vad som finns under fingret/muspekaren
         const target = document.elementFromPoint(clientX, clientY);
         
         if (target && target.classList.contains('pattern-dot')) {
             const index = target.getAttribute('data-index');
-            
-            // Lägg till punkten i mönstret om vi inte redan lagt till den precis nyss
             if (currentPattern.length === 0 || currentPattern[currentPattern.length - 1] !== index) {
                 if (!target.classList.contains('selected')) {
                     target.classList.add('selected');
@@ -179,37 +224,4 @@
 
     function handleEnd() {
         if (!isDrawing) return;
-        isDrawing = false;
-
-        if (currentPattern.length === 0) return; // Gör inget om man bara klickat utanför
-
-        // Kontrollera om mönstret är rätt!
-        if (JSON.stringify(currentPattern) === JSON.stringify(correctPattern)) {
-            lockMessage.textContent = "UPPLÅST!";
-            lockMessage.style.color = "#4caf50"; // Grön färg
-            // Här ska vi senare ladda in Hemskärmen!
-        } else {
-            lockMessage.textContent = "Fel mönster, försök igen";
-            lockMessage.style.color = "#ff3333"; // Röd färg
-            setTimeout(() => {
-                resetPattern();
-                lockMessage.textContent = "Rita mönster för att låsa upp";
-                lockMessage.style.color = "#fff";
-            }, 1000); // Vänta 1 sekund och återställ
-        }
-    }
-
-    // Lyssnare för Datormus
-    lockScreen.addEventListener('mousedown', handleStart);
-    lockScreen.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleEnd);
-
-    // Lyssnare för Touch (Mobiler)
-    lockScreen.addEventListener('touchstart', handleStart, {passive: false});
-    lockScreen.addEventListener('touchmove', handleMove, {passive: false});
-    lockScreen.addEventListener('touchend', handleEnd);
-
-</script>
-
-</body>
-</html>
+        isDrawing = false
