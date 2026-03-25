@@ -68,16 +68,17 @@
             text-align: center;
         }
 
-        #pattern-holder {
+		#pattern-holder {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 25px;
+            gap: 60px; /* Increased the space between dots significantly */
             padding: 20px;
+            margin-top: 20px; /* Adds a bit of breathing room from the text */
         }
 
         .pattern-dot {
-            width: 20px;
-            height: 20px;
+            width: 60px; /* Made the dots much larger (was 20px) */
+            height: 60px;
             background-color: #555;
             border-radius: 50%;
             position: relative;
@@ -86,13 +87,14 @@
 
         .pattern-dot.selected {
             background-color: #ff3333;
-            box-shadow: 0 0 10px #ff3333;
+            box-shadow: 0 0 15px #ff3333; /* Slightly larger red glow */
         }
         
+        /* Invisible hitbox to make it super easy to hit the dots on a touchscreen */
         .pattern-dot::after {
             content: '';
             position: absolute;
-            top: -20px; right: -20px; bottom: -20px; left: -20px;
+            top: -25px; right: -25px; bottom: -25px; left: -25px;
             border-radius: 50%;
         }
 
