@@ -235,13 +235,15 @@
         </div>
     </div>
 
-    <div id="app-image-viewer" class="app-screen">
-        <div class="app-header">
+<div id="app-image-viewer" class="app-screen">
+        <div class="app-header" style="z-index: 100;">
             <span class="back-btn" onclick="openApp('app-gallery')">❮ Galleri</span>
             <span>Bild</span>
             <span style="width: 60px;"></span>
         </div>
-        <div id="full-image-content"></div>
+        <div id="full-image-container" style="flex-grow: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; background-color: #000;">
+            <img id="full-image-img" src="" style="max-width: 100%; max-height: 100%; object-fit: contain; transform-origin: center; touch-action: none;">
+        </div>
     </div>
 
 </div>
@@ -338,11 +340,22 @@
         apps.forEach(app => app.style.display = 'none');
     }
 
-    // --- NYTT: ÖPPNA FULLSKÄRMSBILD ---
+// Variabler för zoom och panorering
+    let imgScale = 1;
+    let imgPointX = 0;
+    let imgPointY = 0;
+
+    // --- ÖPPNA FULLSKÄRMSBILD ---
     function openImage(imgUrl) {
-        // Sätt bakgrundsbilden på fullskärms-div:en till den URL som klickades på
-        document.getElementById('full-image-content').style.backgroundImage = `url('${imgUrl}')`;
-        // Öppna Skärm 6
+        const imgElement = document.getElementById('full-image-img');
+        imgElement.src = imgUrl; // Sätt bilden
+        
+        // Nollställ zoom och position varje gång en bild öppnas
+        imgScale = 1;
+        imgPointX = 0;
+        imgPointY = 0;
+        imgElement.style.transform = `translate(0px, 0px) scale(1)`;
+        
         openApp('app-image-viewer');
     }
 
@@ -413,6 +426,69 @@
         });
 
         openApp('app-sms-thread');
+    }
+
+    // --- ZOOM OCH PANORERING FÖR BILDER ---
+    const imageContainer = document.getElementById('full-image-container');
+    const imageElement = document.getElementById('full-image-img');
+    
+    let startDistance = 0;
+    let initialScale = 1;
+    let isPanning = false;
+    let startX = 0;
+    let startY = 0;
+
+    // Räkna ut avståndet mellan två fingrar
+    function getDistance(touches) {
+        return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
+    }
+
+    imageContainer.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            // Två fingrar = Zooma
+            startDistance = getDistance(e.touches);
+            initialScale = imgScale;
+        } else if (e.touches.length === 1 && imgScale > 1) {
+            // Ett finger (och vi är inzoomade) = Panorera/Dra bilden
+            isPanning = true;
+            startX = e.touches[0].clientX - imgPointX;
+            startY = e.touches[0].clientY - imgPointY;
+        }
+    }, { passive: false });
+
+    imageContainer.addEventListener('touchmove', (e) => {
+        e.preventDefault(); // Stoppa webbläsarens vanliga beteende
+        
+        if (e.touches.length === 2) {
+            // Zooma
+            const currentDistance = getDistance(e.touches);
+            // Räkna ut ny skala, begränsa mellan 1x (normal) och 5x (max inzoomat)
+            imgScale = Math.max(1, Math.min(initialScale * (currentDistance / startDistance), 5));
+            updateImageTransform();
+        } else if (e.touches.length === 1 && isPanning && imgScale > 1) {
+            // Dra runt bilden
+            imgPointX = e.touches[0].clientX - startX;
+            imgPointY = e.touches[0].clientY - startY;
+            updateImageTransform();
+        }
+    }, { passive: false });
+
+    imageContainer.addEventListener('touchend', (e) => {
+        if (e.touches.length < 2) {
+            initialScale = imgScale;
+        }
+        if (e.touches.length === 0) {
+            isPanning = false;
+        }
+    });
+
+    function updateImageTransform() {
+        // Om vi zoomar ut helt, centrera bilden igen
+        if (imgScale === 1) {
+            imgPointX = 0;
+            imgPointY = 0;
+        }
+        imageElement.style.transform = `translate(${imgPointX}px, ${imgPointY}px) scale(${imgScale})`;
     }
 
 </script>
