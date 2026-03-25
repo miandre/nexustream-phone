@@ -15,8 +15,7 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            touch-action: none; /* Stoppar scroll på touchskärmar */
-            user-select: none; /* Stoppar att text markeras när man drar */
+            user-select: none;
             -webkit-user-select: none;
         }
 
@@ -34,7 +33,6 @@
             flex-direction: column;
         }
 
-        /* Statusraden högst upp (används på låsskärmen) */
         #status-bar {
             height: 24px;
             background-color: #000;
@@ -45,6 +43,7 @@
             padding: 0 15px;
             font-size: 12px;
             font-weight: bold;
+            z-index: 50; /* Alltid överst */
         }
 
         /* --- SKÄRM 1: LÅSSKÄRMEN --- */
@@ -55,6 +54,10 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            touch-action: none; /* Stoppar scroll när man ritar */
+            position: absolute;
+            top: 24px; left: 0; right: 0; bottom: 0;
+            z-index: 40;
         }
 
         #lock-message {
@@ -94,27 +97,66 @@
 
         /* --- SKÄRM 2: HEMSKÄRMEN --- */
         #home-screen {
-            display: none; /* Dold tills man loggar in */
+            display: none; 
             width: 100%;
-            height: 100%;
-            background-image: url('phone1.jpg'); /* Laddar in din uppladdade bild */
+            height: calc(100% - 24px);
+            background-image: url('phone1.jpg'); 
             background-size: cover;
             background-position: center;
-            position: relative;
-        }
-
-        /* Osynliga klickbara ytor (Hitboxes) */
-        .hitbox {
             position: absolute;
-            cursor: pointer;
-            /* TIPS: Avkommentera raden nedan (ta bort /*) för att synliggöra knapparna när du justerar dem! */
-            /* border: 2px solid red; background: rgba(255,0,0,0.3); */
+            top: 24px; left: 0;
+            z-index: 10;
         }
 
-        /* Placering över app-ikonerna på din bild */
+        .hitbox { position: absolute; cursor: pointer; }
         #btn-sms { bottom: 7.5%; left: 27%; width: 17%; height: 8.5%; border-radius: 10px; }
         #btn-gallery-dock { bottom: 7.5%; right: 6%; width: 17%; height: 8.5%; border-radius: 10px; }
         #btn-photos-app { bottom: 22.5%; left: 52%; width: 16%; height: 8%; border-radius: 10px; }
+
+        /* --- SKÄRM 3-5: APPARNA (Gemensam stil) --- */
+        .app-screen {
+            display: none;
+            width: 100%;
+            height: calc(100% - 24px);
+            background-color: #000;
+            position: absolute;
+            top: 24px; left: 0;
+            z-index: 20;
+            flex-direction: column;
+            color: #fff;
+        }
+
+        .app-header {
+            background-color: #1a1a1a;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .back-btn { color: #0a84ff; cursor: pointer; font-weight: normal; font-size: 14px; }
+
+        /* --- SMS-LISTA --- */
+        #sms-list-content { flex-grow: 1; overflow-y: auto; touch-action: pan-y; }
+        .sms-item { padding: 15px; border-bottom: 1px solid #222; cursor: pointer; }
+        .sms-item-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .sms-sender { font-weight: bold; font-size: 15px; }
+        .sms-time { color: #888; font-size: 12px; }
+        .sms-preview { color: #aaa; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* --- SMS-TRÅD --- */
+        #thread-messages { flex-grow: 1; padding: 10px; overflow-y: auto; touch-action: pan-y; display: flex; flex-direction: column; }
+        .msg-bubble { max-width: 75%; padding: 10px 14px; border-radius: 18px; margin-bottom: 10px; font-size: 14px; word-wrap: break-word; }
+        .msg-received { background-color: #333; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .msg-sent { background-color: #0a84ff; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .msg-timestamp { font-size: 10px; opacity: 0.7; margin-top: 5px; display: block; text-align: right; }
+
+        /* --- GALLERI --- */
+        #gallery-content { padding: 5px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; overflow-y: auto; touch-action: pan-y; }
+        .gallery-thumb { width: 100%; aspect-ratio: 1 / 1; background-color: #222; background-size: cover; background-position: center; border-radius: 4px; cursor: pointer; }
 
     </style>
 </head>
@@ -129,7 +171,6 @@
     
     <div id="lock-screen">
         <div id="lock-message">Rita mönster för att låsa upp</div>
-        
         <div id="pattern-holder">
             <div class="pattern-dot" data-index="1"></div>
             <div class="pattern-dot" data-index="2"></div>
@@ -144,15 +185,48 @@
     </div>
 
     <div id="home-screen">
-        <div id="btn-sms" class="hitbox" onclick="alert('Bra jobbat! Här ska vi snart bygga in SMS-listan.')"></div>
-        <div id="btn-gallery-dock" class="hitbox" onclick="alert('Här ska bildgalleriet öppnas!')"></div>
-        <div id="btn-photos-app" class="hitbox" onclick="alert('Här ska bildgalleriet öppnas!')"></div>
+        <div id="btn-sms" class="hitbox" onclick="openApp('app-sms-list')"></div>
+        <div id="btn-gallery-dock" class="hitbox" onclick="openApp('app-gallery')"></div>
+        <div id="btn-photos-app" class="hitbox" onclick="openApp('app-gallery')"></div>
+    </div>
+
+    <div id="app-sms-list" class="app-screen">
+        <div class="app-header">
+            <span class="back-btn" onclick="closeApp()">❮ Hem</span>
+            <span>Meddelanden</span>
+            <span style="width: 45px;"></span> </div>
+        <div id="sms-list-content">
+            </div>
+    </div>
+
+    <div id="app-sms-thread" class="app-screen">
+        <div class="app-header">
+            <span class="back-btn" onclick="openApp('app-sms-list')">❮ Tillbaka</span>
+            <span id="thread-title">Namn</span>
+            <span style="width: 60px;"></span>
+        </div>
+        <div id="thread-messages">
+            </div>
+    </div>
+
+    <div id="app-gallery" class="app-screen">
+        <div class="app-header">
+            <span class="back-btn" onclick="closeApp()">❮ Hem</span>
+            <span>Bilder</span>
+            <span style="width: 45px;"></span>
+        </div>
+        <div id="gallery-content">
+            <div class="gallery-thumb" style="background-image: url('20260228_234900.jpg');" onclick="alert('I en full version skulle bilden öppnas stor här!')"></div>
+            <div class="gallery-thumb" style="background-image: url('placeholder2.jpg');"></div>
+            <div class="gallery-thumb" style="background-image: url('placeholder3.jpg');"></div>
+            <div class="gallery-thumb" style="background-image: url('placeholder4.jpg');"></div>
+        </div>
     </div>
 
 </div>
 
 <script>
-    // 1. Klockan
+    // --- KLOCKAN ---
     function updateTime() {
         const now = new Date();
         document.getElementById('current-time').textContent = 
@@ -162,11 +236,10 @@
     setInterval(updateTime, 1000);
     updateTime();
 
-    // 2. Mönsterlåset
+    // --- MÖNSTERLÅSET ---
     const correctPattern = ['1', '2', '3', '6', '9', '8', '7'];
     let currentPattern = [];
     let isDrawing = false;
-
     const dots = document.querySelectorAll('.pattern-dot');
     const lockScreen = document.getElementById('lock-screen');
     const lockMessage = document.getElementById('lock-message');
@@ -177,7 +250,7 @@
     }
 
     function handleStart(e) {
-        if (e.type === 'mousedown' && e.button !== 0) return; // Ignorera högerklick
+        if (e.type === 'mousedown' && e.button !== 0) return;
         isDrawing = true;
         resetPattern();
         handleMove(e);
@@ -185,24 +258,12 @@
 
     function handleMove(e) {
         if (!isDrawing) return;
+        if (e.cancelable) e.preventDefault();
         
-        // Stoppar skärmen från att hoppa runt
-        if (e.cancelable) {
-            e.preventDefault();
-        }
-        
-        let clientX, clientY;
-        // Kollar om det är finger eller muspekare
-        if (e.type.includes('touch')) {
-            clientX = e.touches[0].clientX;
-            clientY = e.touches[0].clientY;
-        } else {
-            clientX = e.clientX;
-            clientY = e.clientY;
-        }
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        let clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
         const target = document.elementFromPoint(clientX, clientY);
-        
         if (target && target.classList.contains('pattern-dot')) {
             const index = target.getAttribute('data-index');
             if (currentPattern.length === 0 || currentPattern[currentPattern.length - 1] !== index) {
@@ -217,20 +278,15 @@
     function handleEnd() {
         if (!isDrawing) return;
         isDrawing = false;
-
         if (currentPattern.length === 0) return;
 
         if (JSON.stringify(currentPattern) === JSON.stringify(correctPattern)) {
             lockMessage.textContent = "UPPLÅST!";
             lockMessage.style.color = "#4caf50";
-            
-            // Loggar in och byter till hemskärmen (din bild)
             setTimeout(() => {
-                document.getElementById('lock-screen').style.display = 'none';
-                document.getElementById('status-bar').style.display = 'none';
+                lockScreen.style.display = 'none';
                 document.getElementById('home-screen').style.display = 'block';
             }, 800);
-
         } else {
             lockMessage.textContent = "Fel mönster, försök igen";
             lockMessage.style.color = "#ff3333";
@@ -242,14 +298,99 @@
         }
     }
 
-    // Lyssnare är nu lagda på hela fönstret för att vara säkrare
     lockScreen.addEventListener('mousedown', handleStart);
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleEnd);
-
     lockScreen.addEventListener('touchstart', handleStart, {passive: false});
     window.addEventListener('touchmove', handleMove, {passive: false});
     window.addEventListener('touchend', handleEnd);
+
+    // --- APP-NAVIGERING ---
+    function openApp(appId) {
+        // Dölj alla appar först
+        const apps = document.querySelectorAll('.app-screen');
+        apps.forEach(app => app.style.display = 'none');
+        // Visa vald app (och gör den flexibel för layout)
+        document.getElementById(appId).style.display = 'flex';
+    }
+
+    function closeApp() {
+        const apps = document.querySelectorAll('.app-screen');
+        apps.forEach(app => app.style.display = 'none');
+        // Hemskärmen ligger under, så när vi döljer apparna syns hemskärmen igen
+    }
+
+    // --- SMS DATA & LOGIK ---
+    const smsData = [
+        {
+            id: 'beatrice',
+            name: 'Beatrice von Essen',
+            time: '21:32',
+            preview: 'Var är rapporterna? Jag väntar.',
+            messages: [
+                { sender: 'them', text: 'Siffrorna Marcus visade mig stämmer inte. Jag vet vad ni mörkar.', time: '21:10' },
+                { sender: 'me', text: 'Lugna ner dig. Vi tar det sen.', time: '21:12' },
+                { sender: 'them', text: 'Nej. Vi möts i lobbyn kl 21.30. Ta med originalrapporterna annars sparkar jag dig ikväll.', time: '21:28' },
+                { sender: 'me', text: 'Marcus har rapporterna du vill se. Han är på väg till mitt rum nu för att hämta dem.', time: '21:32' }
+            ]
+        },
+        {
+            id: 'sebastian',
+            name: 'Sebastian Berg',
+            time: '19:48',
+            preview: 'Du skämtar? Du lovade!',
+            messages: [
+                { sender: 'me', text: 'Styrelsen drog in bonusprogrammet. Marknaden är tuff. Gilla läget.', time: '19:45' },
+                { sender: 'them', text: 'Du skämtar? Du lovade! Jag har redan lagt handpenning på bilen, jag är ruinerad om du backar nu!', time: '19:48' }
+            ]
+        },
+        {
+            id: 'dolt',
+            name: 'Okänt nummer',
+            time: 'Mån 08:15',
+            preview: 'Jag har inte glömt. 2006 var bara...',
+            messages: [
+                { sender: 'them', text: 'Jag har inte glömt. 2006 var bara början på slutet för dig.', time: 'Måndag 08:15' }
+            ]
+        }
+    ];
+
+    // Rendera SMS-listan
+    const smsListContainer = document.getElementById('sms-list-content');
+    smsData.forEach(thread => {
+        const div = document.createElement('div');
+        div.className = 'sms-item';
+        div.onclick = () => openThread(thread.id);
+        div.innerHTML = `
+            <div class="sms-item-header">
+                <span class="sms-sender">${thread.name}</span>
+                <span class="sms-time">${thread.time}</span>
+            </div>
+            <div class="sms-preview">${thread.preview}</div>
+        `;
+        smsListContainer.appendChild(div);
+    });
+
+    // Öppna en specifik SMS-konversation
+    function openThread(threadId) {
+        const thread = smsData.find(t => t.id === threadId);
+        document.getElementById('thread-title').textContent = thread.name;
+        
+        const msgContainer = document.getElementById('thread-messages');
+        msgContainer.innerHTML = ''; // Rensa gamla meddelanden
+
+        thread.messages.forEach(msg => {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `msg-bubble ${msg.sender === 'me' ? 'msg-sent' : 'msg-received'}`;
+            msgDiv.innerHTML = `
+                ${msg.text}
+                <span class="msg-timestamp">${msg.time}</span>
+            `;
+            msgContainer.appendChild(msgDiv);
+        });
+
+        openApp('app-sms-thread');
+    }
 
 </script>
 
