@@ -19,13 +19,12 @@
             -webkit-user-select: none;
         }
 
-/* Telefonens yttre ram (Nu anpassad för hela skärmen) */
+        /* Telefonens yttre ram */
         #phone-bezel {
-            width: 100vw; /* 100% av skärmens bredd */
-            height: 100vh; /* 100% av skärmens höjd */
-            max-width: 500px; /* Begränsar bredden ifall någon öppnar på dator/surfplatta */
+            width: 100vw;
+            height: 100vh;
+            max-width: 500px;
             background-color: #000;
-            /* Vi tar bort border och border-radius. Den fysiska mobilen är nu ramen! */
             border: none;
             border-radius: 0;
             position: relative;
@@ -48,6 +47,16 @@
             z-index: 40;
         }
 
+        #pattern-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
         #status-bar {
             height: 24px;
             background-color: #000;
@@ -58,7 +67,7 @@
             padding: 0 15px;
             font-size: 12px;
             font-weight: bold;
-            z-index: 50; /* Alltid överst */
+            z-index: 50;
         }
 
         #lock-message {
@@ -66,31 +75,47 @@
             font-size: 18px;
             margin-bottom: 40px;
             text-align: center;
+            z-index: 10;
         }
 
-		#pattern-holder {
+        #pattern-holder {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 60px; /* Increased the space between dots significantly */
+            gap: 60px; 
             padding: 20px;
-            margin-top: 20px; /* Adds a bit of breathing room from the text */
+            margin-top: 20px; 
+            z-index: 10;
+            position: relative;
         }
 
         .pattern-dot {
-            width: 60px; /* Made the dots much larger (was 20px) */
+            width: 60px; 
             height: 60px;
             background-color: #555;
             border-radius: 50%;
             position: relative;
             cursor: pointer;
+            transition: background-color 0.1s; /* Mjukare färgövergång */
         }
 
+        /* Färg när man drar (Ljusgrå) */
         .pattern-dot.selected {
-            background-color: #ff3333;
-            box-shadow: 0 0 15px #ff3333; /* Slightly larger red glow */
+            background-color: #dddddd;
+            box-shadow: 0 0 15px #dddddd;
+        }
+
+        /* Färg när mönstret är RÄTT (Grön) */
+        .pattern-dot.success {
+            background-color: #4caf50 !important;
+            box-shadow: 0 0 15px #4caf50 !important;
+        }
+
+        /* Färg när mönstret är FEL (Röd) */
+        .pattern-dot.error {
+            background-color: #ff3333 !important;
+            box-shadow: 0 0 15px #ff3333 !important;
         }
         
-        /* Invisible hitbox to make it super easy to hit the dots on a touchscreen */
         .pattern-dot::after {
             content: '';
             position: absolute;
@@ -102,9 +127,8 @@
         #home-screen {
             display: none; 
             width: 100%;
-            height: calc(95% - 24px);
+            height: calc(100% - 24px);
             background-image: url('phone.jpg'); 
-            /* Ändra från 'cover' till '100% 100%' för att låsa proportionerna mot klickytorna */
             background-size: 100% 100%; 
             background-position: center;
             background-repeat: no-repeat;
@@ -118,7 +142,7 @@
         #btn-gallery-dock { bottom: 7.5%; right: 6%; width: 17%; height: 8.5%; border-radius: 10px; }
         #btn-photos-app { bottom: 22.5%; left: 52%; width: 16%; height: 8%; border-radius: 10px; }
 
-        /* --- SKÄRM 3-6: APPARNA (Gemensam stil) --- */
+        /* --- SKÄRM 3-6: APPARNA --- */
         .app-screen {
             display: none;
             width: 100%;
@@ -144,7 +168,7 @@
 
         .back-btn { color: #0a84ff; cursor: pointer; font-weight: normal; font-size: 14px; }
 
-        /* --- SMS-LISTA --- */
+        /* --- SMS --- */
         #sms-list-content { flex-grow: 1; overflow-y: auto; touch-action: pan-y; }
         .sms-item { padding: 15px; border-bottom: 1px solid #222; cursor: pointer; }
         .sms-item-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
@@ -152,24 +176,32 @@
         .sms-time { color: #888; font-size: 12px; }
         .sms-preview { color: #aaa; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* --- SMS-TRÅD --- */
         #thread-messages { flex-grow: 1; padding: 10px; overflow-y: auto; touch-action: pan-y; display: flex; flex-direction: column; }
         .msg-bubble { max-width: 75%; padding: 10px 14px; border-radius: 18px; margin-bottom: 10px; font-size: 14px; word-wrap: break-word; }
         .msg-received { background-color: #333; align-self: flex-start; border-bottom-left-radius: 4px; }
         .msg-sent { background-color: #0a84ff; align-self: flex-end; border-bottom-right-radius: 4px; }
         .msg-timestamp { font-size: 10px; opacity: 0.7; margin-top: 5px; display: block; text-align: right; }
 
-        /* --- GALLERI (Miniatyrer) --- */
+        /* --- GALLERI --- */
         #gallery-content { padding: 5px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; overflow-y: auto; touch-action: pan-y; }
         .gallery-thumb { width: 100%; aspect-ratio: 1 / 1; background-color: #222; background-size: cover; background-position: center; border-radius: 4px; cursor: pointer; }
 
         /* --- FULLSKÄRMSBILD --- */
-        #full-image-content {
-            flex-grow: 1;
+        #full-image-container {
+            flex-grow: 1; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden; 
+            position: relative; 
             background-color: #000;
-            background-size: contain; /* Gör att hela bilden syns utan att beskäras */
-            background-repeat: no-repeat;
-            background-position: center;
+        }
+        #full-image-img {
+            max-width: 100%; 
+            max-height: 100%; 
+            object-fit: contain; 
+            transform-origin: center; 
+            touch-action: none;
         }
 
     </style>
@@ -184,6 +216,7 @@
     </div>
     
     <div id="lock-screen">
+        <canvas id="pattern-canvas"></canvas>
         <div id="lock-message">Rita mönster för att låsa upp</div>
         <div id="pattern-holder">
             <div class="pattern-dot" data-index="1"></div>
@@ -208,7 +241,8 @@
         <div class="app-header">
             <span class="back-btn" onclick="closeApp()">❮ Hem</span>
             <span>Meddelanden</span>
-            <span style="width: 45px;"></span> </div>
+            <span style="width: 45px;"></span> 
+        </div>
         <div id="sms-list-content"></div>
     </div>
 
@@ -235,14 +269,14 @@
         </div>
     </div>
 
-<div id="app-image-viewer" class="app-screen">
+    <div id="app-image-viewer" class="app-screen">
         <div class="app-header" style="z-index: 100;">
             <span class="back-btn" onclick="openApp('app-gallery')">❮ Galleri</span>
             <span>Bild</span>
             <span style="width: 60px;"></span>
         </div>
-        <div id="full-image-container" style="flex-grow: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; background-color: #000;">
-            <img id="full-image-img" src="" style="max-width: 100%; max-height: 100%; object-fit: contain; transform-origin: center; touch-action: none;">
+        <div id="full-image-container">
+            <img id="full-image-img" src="">
         </div>
     </div>
 
@@ -259,7 +293,7 @@
     setInterval(updateTime, 1000);
     updateTime();
 
-    // --- MÖNSTERLÅSET ---
+    // --- MÖNSTERLÅS & RIT-STRECK ---
     const correctPattern = ['1', '2', '3', '6', '9', '8', '7'];
     let currentPattern = [];
     let isDrawing = false;
@@ -267,13 +301,64 @@
     const lockScreen = document.getElementById('lock-screen');
     const lockMessage = document.getElementById('lock-message');
 
+    const canvas = document.getElementById('pattern-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = lockScreen.offsetWidth;
+        canvas.height = lockScreen.offsetHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function drawLines(currentX, currentY, color = '#dddddd') {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); 
+        if (currentPattern.length === 0) return;
+
+        ctx.lineWidth = 10; 
+        ctx.strokeStyle = color; 
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+
+        const canvasRect = canvas.getBoundingClientRect();
+
+        for (let i = 0; i < currentPattern.length; i++) {
+            const dot = document.querySelector(`.pattern-dot[data-index="${currentPattern[i]}"]`);
+            if(!dot) continue;
+            const rect = dot.getBoundingClientRect();
+            
+            const x = rect.left + rect.width / 2 - canvasRect.left;
+            const y = rect.top + rect.height / 2 - canvasRect.top;
+
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+
+        if (isDrawing && currentX !== undefined && currentY !== undefined) {
+            const mouseX = currentX - canvasRect.left;
+            const mouseY = currentY - canvasRect.top;
+            ctx.lineTo(mouseX, mouseY);
+        }
+
+        ctx.stroke();
+    }
+
     function resetPattern() {
-        dots.forEach(dot => dot.classList.remove('selected'));
+        dots.forEach(dot => {
+            // Nu rensar vi bara klasserna, mycket säkrare!
+            dot.classList.remove('selected', 'success', 'error');
+        });
         currentPattern = [];
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
     function handleStart(e) {
         if (e.type === 'mousedown' && e.button !== 0) return;
+        resizeCanvas();
         isDrawing = true;
         resetPattern();
         handleMove(e);
@@ -296,6 +381,8 @@
                 }
             }
         }
+        
+        drawLines(clientX, clientY);
     }
 
     function handleEnd() {
@@ -306,13 +393,33 @@
         if (JSON.stringify(currentPattern) === JSON.stringify(correctPattern)) {
             lockMessage.textContent = "UPPLÅST!";
             lockMessage.style.color = "#4caf50";
+            
+            drawLines(undefined, undefined, '#4caf50');
+            dots.forEach(dot => {
+                if (dot.classList.contains('selected')) {
+                    dot.classList.add('success');
+                }
+            });
+
             setTimeout(() => {
                 lockScreen.style.display = 'none';
                 document.getElementById('home-screen').style.display = 'block';
+                // Återställ i bakgrunden så det är redo om sidan laddas om
+                resetPattern();
+                lockMessage.textContent = "Rita mönster för att låsa upp";
+                lockMessage.style.color = "#fff";
             }, 800);
         } else {
             lockMessage.textContent = "Fel mönster, försök igen";
             lockMessage.style.color = "#ff3333";
+            
+            drawLines(undefined, undefined, '#ff3333');
+            dots.forEach(dot => {
+                if (dot.classList.contains('selected')) {
+                    dot.classList.add('error');
+                }
+            });
+
             setTimeout(() => {
                 resetPattern();
                 lockMessage.textContent = "Rita mönster för att låsa upp";
@@ -340,7 +447,7 @@
         apps.forEach(app => app.style.display = 'none');
     }
 
-// Variabler för zoom och panorering
+    // Variabler för zoom och panorering
     let imgScale = 1;
     let imgPointX = 0;
     let imgPointY = 0;
@@ -348,9 +455,8 @@
     // --- ÖPPNA FULLSKÄRMSBILD ---
     function openImage(imgUrl) {
         const imgElement = document.getElementById('full-image-img');
-        imgElement.src = imgUrl; // Sätt bilden
+        imgElement.src = imgUrl; 
         
-        // Nollställ zoom och position varje gång en bild öppnas
         imgScale = 1;
         imgPointX = 0;
         imgPointY = 0;
@@ -438,18 +544,15 @@
     let startX = 0;
     let startY = 0;
 
-    // Räkna ut avståndet mellan två fingrar
     function getDistance(touches) {
         return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
     }
 
     imageContainer.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
-            // Två fingrar = Zooma
             startDistance = getDistance(e.touches);
             initialScale = imgScale;
         } else if (e.touches.length === 1 && imgScale > 1) {
-            // Ett finger (och vi är inzoomade) = Panorera/Dra bilden
             isPanning = true;
             startX = e.touches[0].clientX - imgPointX;
             startY = e.touches[0].clientY - imgPointY;
@@ -457,16 +560,13 @@
     }, { passive: false });
 
     imageContainer.addEventListener('touchmove', (e) => {
-        e.preventDefault(); // Stoppa webbläsarens vanliga beteende
+        e.preventDefault(); 
         
         if (e.touches.length === 2) {
-            // Zooma
             const currentDistance = getDistance(e.touches);
-            // Räkna ut ny skala, begränsa mellan 1x (normal) och 5x (max inzoomat)
             imgScale = Math.max(1, Math.min(initialScale * (currentDistance / startDistance), 5));
             updateImageTransform();
         } else if (e.touches.length === 1 && isPanning && imgScale > 1) {
-            // Dra runt bilden
             imgPointX = e.touches[0].clientX - startX;
             imgPointY = e.touches[0].clientY - startY;
             updateImageTransform();
@@ -483,7 +583,6 @@
     });
 
     function updateImageTransform() {
-        // Om vi zoomar ut helt, centrera bilden igen
         if (imgScale === 1) {
             imgPointX = 0;
             imgPointY = 0;
