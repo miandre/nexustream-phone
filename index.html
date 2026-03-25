@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NexuStream Personal Device - VD</title>
     <style>
-        /* Grundläggande nollställning och bakgrund */
+        /* Grundläggande nollställning */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #1a1a1a;
@@ -15,7 +15,9 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            touch-action: none;
+            touch-action: none; /* Stoppar scroll på touchskärmar */
+            user-select: none; /* Stoppar att text markeras när man drar */
+            -webkit-user-select: none;
         }
 
         /* Telefonens yttre ram */
@@ -32,7 +34,7 @@
             flex-direction: column;
         }
 
-        /* Statusraden högst upp (används bara på låsskärmen nu) */
+        /* Statusraden högst upp (används på låsskärmen) */
         #status-bar {
             height: 24px;
             background-color: #000;
@@ -92,10 +94,10 @@
 
         /* --- SKÄRM 2: HEMSKÄRMEN --- */
         #home-screen {
-            display: none; /* Dold från start */
+            display: none; /* Dold tills man loggar in */
             width: 100%;
             height: 100%;
-            background-image: url('phone1.jpg'); /* Laddar in din uppladdade skärmdump */
+            background-image: url('phone1.jpg'); /* Laddar in din uppladdade bild */
             background-size: cover;
             background-position: center;
             position: relative;
@@ -105,36 +107,14 @@
         .hitbox {
             position: absolute;
             cursor: pointer;
-            /* TIPS: Avkommentera raden nedanför (ta bort /* och */) om du vill se var de osynliga knapparna ligger när du ställer in dem! */
+            /* TIPS: Avkommentera raden nedan (ta bort /*) för att synliggöra knapparna när du justerar dem! */
             /* border: 2px solid red; background: rgba(255,0,0,0.3); */
         }
 
-        /* Placering över SMS-ikonen (blå nere till vänster) */
-        #btn-sms {
-            bottom: 7.5%; 
-            left: 27%;
-            width: 17%;
-            height: 8.5%;
-            border-radius: 10px;
-        }
-
-        /* Placering över Galleri-ikonen (gul nere till höger) */
-        #btn-gallery-dock {
-            bottom: 7.5%; 
-            right: 6%;
-            width: 17%;
-            height: 8.5%;
-            border-radius: 10px;
-        }
-
-        /* Placering över "Photos"-ikonen (vindsnurran mitt på skärmen) */
-        #btn-photos-app {
-            bottom: 22.5%; 
-            left: 52%;
-            width: 16%;
-            height: 8%;
-            border-radius: 10px;
-        }
+        /* Placering över app-ikonerna på din bild */
+        #btn-sms { bottom: 7.5%; left: 27%; width: 17%; height: 8.5%; border-radius: 10px; }
+        #btn-gallery-dock { bottom: 7.5%; right: 6%; width: 17%; height: 8.5%; border-radius: 10px; }
+        #btn-photos-app { bottom: 22.5%; left: 52%; width: 16%; height: 8%; border-radius: 10px; }
 
     </style>
 </head>
@@ -172,7 +152,7 @@
 </div>
 
 <script>
-    // 1. Klockan för låsskärmen
+    // 1. Klockan
     function updateTime() {
         const now = new Date();
         document.getElementById('current-time').textContent = 
@@ -197,6 +177,7 @@
     }
 
     function handleStart(e) {
+        if (e.type === 'mousedown' && e.button !== 0) return; // Ignorera högerklick
         isDrawing = true;
         resetPattern();
         handleMove(e);
@@ -204,10 +185,21 @@
 
     function handleMove(e) {
         if (!isDrawing) return;
-        e.preventDefault();
         
-        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        // Stoppar skärmen från att hoppa runt
+        if (e.cancelable) {
+            e.preventDefault();
+        }
+        
+        let clientX, clientY;
+        // Kollar om det är finger eller muspekare
+        if (e.type.includes('touch')) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
 
         const target = document.elementFromPoint(clientX, clientY);
         
@@ -224,4 +216,42 @@
 
     function handleEnd() {
         if (!isDrawing) return;
-        isDrawing = false
+        isDrawing = false;
+
+        if (currentPattern.length === 0) return;
+
+        if (JSON.stringify(currentPattern) === JSON.stringify(correctPattern)) {
+            lockMessage.textContent = "UPPLÅST!";
+            lockMessage.style.color = "#4caf50";
+            
+            // Loggar in och byter till hemskärmen (din bild)
+            setTimeout(() => {
+                document.getElementById('lock-screen').style.display = 'none';
+                document.getElementById('status-bar').style.display = 'none';
+                document.getElementById('home-screen').style.display = 'block';
+            }, 800);
+
+        } else {
+            lockMessage.textContent = "Fel mönster, försök igen";
+            lockMessage.style.color = "#ff3333";
+            setTimeout(() => {
+                resetPattern();
+                lockMessage.textContent = "Rita mönster för att låsa upp";
+                lockMessage.style.color = "#fff";
+            }, 1000);
+        }
+    }
+
+    // Lyssnare är nu lagda på hela fönstret för att vara säkrare
+    lockScreen.addEventListener('mousedown', handleStart);
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+
+    lockScreen.addEventListener('touchstart', handleStart, {passive: false});
+    window.addEventListener('touchmove', handleMove, {passive: false});
+    window.addEventListener('touchend', handleEnd);
+
+</script>
+
+</body>
+</html>
