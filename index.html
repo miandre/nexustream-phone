@@ -54,7 +54,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            touch-action: none; /* Stoppar scroll när man ritar */
+            touch-action: none;
             position: absolute;
             top: 24px; left: 0; right: 0; bottom: 0;
             z-index: 40;
@@ -100,7 +100,7 @@
             display: none; 
             width: 100%;
             height: calc(100% - 24px);
-            background-image: url('phone2.jpg'); 
+            background-image: url('phone1.jpg'); 
             background-size: cover;
             background-position: center;
             position: absolute;
@@ -113,7 +113,7 @@
         #btn-gallery-dock { bottom: 7.5%; right: 6%; width: 17%; height: 8.5%; border-radius: 10px; }
         #btn-photos-app { bottom: 22.5%; left: 52%; width: 16%; height: 8%; border-radius: 10px; }
 
-        /* --- SKÄRM 3-5: APPARNA (Gemensam stil) --- */
+        /* --- SKÄRM 3-6: APPARNA (Gemensam stil) --- */
         .app-screen {
             display: none;
             width: 100%;
@@ -154,9 +154,18 @@
         .msg-sent { background-color: #0a84ff; align-self: flex-end; border-bottom-right-radius: 4px; }
         .msg-timestamp { font-size: 10px; opacity: 0.7; margin-top: 5px; display: block; text-align: right; }
 
-        /* --- GALLERI --- */
+        /* --- GALLERI (Miniatyrer) --- */
         #gallery-content { padding: 5px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; overflow-y: auto; touch-action: pan-y; }
         .gallery-thumb { width: 100%; aspect-ratio: 1 / 1; background-color: #222; background-size: cover; background-position: center; border-radius: 4px; cursor: pointer; }
+
+        /* --- FULLSKÄRMSBILD --- */
+        #full-image-content {
+            flex-grow: 1;
+            background-color: #000;
+            background-size: contain; /* Gör att hela bilden syns utan att beskäras */
+            background-repeat: no-repeat;
+            background-position: center;
+        }
 
     </style>
 </head>
@@ -195,8 +204,7 @@
             <span class="back-btn" onclick="closeApp()">❮ Hem</span>
             <span>Meddelanden</span>
             <span style="width: 45px;"></span> </div>
-        <div id="sms-list-content">
-            </div>
+        <div id="sms-list-content"></div>
     </div>
 
     <div id="app-sms-thread" class="app-screen">
@@ -205,8 +213,7 @@
             <span id="thread-title">Namn</span>
             <span style="width: 60px;"></span>
         </div>
-        <div id="thread-messages">
-            </div>
+        <div id="thread-messages"></div>
     </div>
 
     <div id="app-gallery" class="app-screen">
@@ -216,11 +223,20 @@
             <span style="width: 45px;"></span>
         </div>
         <div id="gallery-content">
-            <div class="gallery-thumb" style="background-image: url('grupp.png');" onclick="alert('I en full version skulle bilden öppnas stor här!')"></div>
-            <div class="gallery-thumb" style="background-image: url('alperna.jpg');"></div>
-            <div class="gallery-thumb" style="background-image: url('lucka.JPG');"></div>
-            <div class="gallery-thumb" style="background-image: url('dog.JPG');"></div>
+            <div class="gallery-thumb" style="background-image: url('dog.JPG');" onclick="openImage('20260228_234900.jpg')"></div>
+            <div class="gallery-thumb" style="background-image: url('grupp.jpg');" onclick="openImage('placeholder2.jpg')"></div>
+            <div class="gallery-thumb" style="background-image: url('lucka.JPG');" onclick="openImage('placeholder3.jpg')"></div>
+            <div class="gallery-thumb" style="background-image: url('alperna.jpg');" onclick="openImage('placeholder4.jpg')"></div>
         </div>
+    </div>
+
+    <div id="app-image-viewer" class="app-screen">
+        <div class="app-header">
+            <span class="back-btn" onclick="openApp('app-gallery')">❮ Galleri</span>
+            <span>Bild</span>
+            <span style="width: 60px;"></span>
+        </div>
+        <div id="full-image-content"></div>
     </div>
 
 </div>
@@ -307,17 +323,22 @@
 
     // --- APP-NAVIGERING ---
     function openApp(appId) {
-        // Dölj alla appar först
         const apps = document.querySelectorAll('.app-screen');
         apps.forEach(app => app.style.display = 'none');
-        // Visa vald app (och gör den flexibel för layout)
         document.getElementById(appId).style.display = 'flex';
     }
 
     function closeApp() {
         const apps = document.querySelectorAll('.app-screen');
         apps.forEach(app => app.style.display = 'none');
-        // Hemskärmen ligger under, så när vi döljer apparna syns hemskärmen igen
+    }
+
+    // --- NYTT: ÖPPNA FULLSKÄRMSBILD ---
+    function openImage(imgUrl) {
+        // Sätt bakgrundsbilden på fullskärms-div:en till den URL som klickades på
+        document.getElementById('full-image-content').style.backgroundImage = `url('${imgUrl}')`;
+        // Öppna Skärm 6
+        openApp('app-image-viewer');
     }
 
     // --- SMS DATA & LOGIK ---
@@ -355,7 +376,6 @@
         }
     ];
 
-    // Rendera SMS-listan
     const smsListContainer = document.getElementById('sms-list-content');
     smsData.forEach(thread => {
         const div = document.createElement('div');
@@ -371,13 +391,11 @@
         smsListContainer.appendChild(div);
     });
 
-    // Öppna en specifik SMS-konversation
     function openThread(threadId) {
         const thread = smsData.find(t => t.id === threadId);
         document.getElementById('thread-title').textContent = thread.name;
-        
         const msgContainer = document.getElementById('thread-messages');
-        msgContainer.innerHTML = ''; // Rensa gamla meddelanden
+        msgContainer.innerHTML = ''; 
 
         thread.messages.forEach(msg => {
             const msgDiv = document.createElement('div');
