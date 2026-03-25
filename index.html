@@ -19,15 +19,16 @@
             -webkit-user-select: none;
         }
 
-        /* Telefonens yttre ram */
+/* Telefonens yttre ram (Nu anpassad för hela skärmen) */
         #phone-bezel {
-            width: 320px;
-            height: 650px;
+            width: 100vw; /* 100% av skärmens bredd */
+            height: 100vh; /* 100% av skärmens höjd */
+            max-width: 500px; /* Begränsar bredden ifall någon öppnar på dator/surfplatta */
             background-color: #000;
-            border: 14px solid #333;
-            border-radius: 40px;
+            /* Vi tar bort border och border-radius. Den fysiska mobilen är nu ramen! */
+            border: none;
+            border-radius: 0;
             position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -46,18 +47,19 @@
             z-index: 50; /* Alltid överst */
         }
 
-        /* --- SKÄRM 1: LÅSSKÄRMEN --- */
-        #lock-screen {
-            flex-grow: 1;
-            background-color: #0d0d0d;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            touch-action: none;
+        /* --- SKÄRM 2: HEMSKÄRMEN --- */
+        #home-screen {
+            display: none; 
+            width: 100%;
+            height: calc(100% - 24px);
+            background-image: url('phone1.jpg'); 
+            /* Ändra från 'cover' till '100% 100%' för att låsa proportionerna mot klickytorna */
+            background-size: 100% 100%; 
+            background-position: center;
+            background-repeat: no-repeat;
             position: absolute;
-            top: 24px; left: 0; right: 0; bottom: 0;
-            z-index: 40;
+            top: 24px; left: 0;
+            z-index: 10;
         }
 
         #lock-message {
