@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NexuStream Personal Device - VD</title>
     <style>
-        /* Grundläggande nollställning */
+/* Grundläggande nollställning */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #1a1a1a;
@@ -13,16 +13,17 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            height: 100vh; /* Fallback för äldre webbläsare */
+            height: 100dvh; /* NYTT: Anpassar sig dynamiskt efter menyer och knappar i botten/toppen */
             overflow: hidden;
             user-select: none;
             -webkit-user-select: none;
         }
-
-        /* Telefonens yttre ram */
+        /* Telefonens yttre ram (Nu anpassad för hela skärmen) */
         #phone-bezel {
             width: 100vw;
-            height: 100vh;
+            height: 100vh; /* Fallback */
+            height: 100dvh; /* NYTT: Anpassar ramens höjd till exakt det som är synligt */
             max-width: 500px;
             background-color: #000;
             border: none;
@@ -169,7 +170,12 @@
         .back-btn { color: #0a84ff; cursor: pointer; font-weight: normal; font-size: 14px; }
 
         /* --- SMS --- */
-        #sms-list-content { flex-grow: 1; overflow-y: auto; touch-action: pan-y; }
+        #sms-list-content { 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            touch-action: pan-y; 
+            padding-bottom: 20px; /* Lägger till lite luft i botten när man skrollar längst ner */
+        }
         .sms-item { padding: 15px; border-bottom: 1px solid #222; cursor: pointer; }
         .sms-item-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
         .sms-sender { font-weight: bold; font-size: 15px; }
